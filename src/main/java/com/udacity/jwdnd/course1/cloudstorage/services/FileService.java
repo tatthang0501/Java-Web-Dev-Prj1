@@ -21,7 +21,7 @@ public class FileService {
         this.userService = userService;
     }
 
-    public void addFile(MultipartFile uploadFile, String fileName) throws IOException {
+    public int addFile(MultipartFile uploadFile, String fileName) throws IOException {
         File file = new File();
         file.setFileName(fileName);
         file.setFileSize(uploadFile.getSize()+"");
@@ -33,7 +33,9 @@ public class FileService {
 
         file.setFileData(uploadFile.getBytes());
         System.out.println(file.toString());
-        fileMapper.insert(file);
+        int count =  fileMapper.insert(file);
+        System.out.println("Added file count : " + count);
+        return count;
     }
 
     public ArrayList<File> getAllFile(){
@@ -55,5 +57,10 @@ public class FileService {
 
     public File getFileData(int fileId){
         return fileMapper.getFileData(fileId);
+    }
+
+    public boolean isFileExisted(String fileName){
+        if(fileMapper.fileNameCount(fileName) > 0) return true;
+        return false;
     }
 }

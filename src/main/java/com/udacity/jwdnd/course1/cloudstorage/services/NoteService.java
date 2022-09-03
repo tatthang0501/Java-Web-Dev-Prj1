@@ -25,7 +25,7 @@ public class NoteService {
         this.userService = userService;
     }
 
-    public void addOrUpdate(NoteForm noteForm){
+    public int addOrUpdate(NoteForm noteForm){
         Note note = new Note();
         note.setNoteDescription(noteForm.getNoteDescription());
         note.setNoteTitle(noteForm.getNoteTitle());
@@ -36,11 +36,11 @@ public class NoteService {
             note.setUserId(userService.getUserIdByUsername(username));
             System.out.println("Inserting note data: " + noteForm.getNoteTitle() + " / " + note.getNoteDescription() + " / "
             + note.getUserId());
-            noteMapper.insert(note);
+            return noteMapper.insert(note);
         }
         else{
             note.setNoteId(noteForm.getNoteId());
-            noteMapper.update(note.getNoteTitle(), note.getNoteDescription(), note.getNoteId());
+            return noteMapper.update(note.getNoteTitle(), note.getNoteDescription(), note.getNoteId());
         }
     }
 

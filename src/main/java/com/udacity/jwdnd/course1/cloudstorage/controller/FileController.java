@@ -2,12 +2,11 @@ package com.udacity.jwdnd.course1.cloudstorage.controller;
 
 import com.udacity.jwdnd.course1.cloudstorage.model.File;
 import com.udacity.jwdnd.course1.cloudstorage.services.FileService;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,10 +25,24 @@ public class FileController {
 
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("fileUpload") MultipartFile multipartFile
-        ,@RequestParam("fileName") String fileName) throws IOException {
-        System.out.println("file name: " + fileName);
-        fileService.addFile(multipartFile, fileName);
-        return "redirect:/home";
+        , @RequestParam("fileName") String fileName, Model model) throws IOException {
+        boolean result = false;
+        String errMsg;
+        if(multipartFile.isEmpty()){
+            errMsg = "Upload file cannot be empty!";
+            model.addAttribute("errMsg", errMsg);
+        }
+        else if(fileService.isFileExisted(fileName)){
+            errMsg = "File is existed!";
+            model.addAttribute("errMsg", errMsg);
+        }
+        else {
+            int count = fileService.addFile(multipartFile, fileName);
+            result = (count == 1) ? true : false;
+        }
+        model.addAttribute("result", result);
+        return "result";
+
     }
 
     @GetMapping("/delete/{fileId}")

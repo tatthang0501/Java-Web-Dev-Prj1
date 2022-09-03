@@ -26,7 +26,7 @@ public class CredentialService {
         this.encryptionService = encryptionService;
     }
 
-    public void addOrUpdate(CredentialForm credentialForm){
+    public int addOrUpdate(CredentialForm credentialForm){
         Credential credential = new Credential();
         credential.setUsername(credentialForm.getUsername());
         credential.setUrl(credentialForm.getUrl());
@@ -42,13 +42,14 @@ public class CredentialService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username =  authentication.getPrincipal().toString();
             credential.setUserId(userService.getUserIdByUsername(username));
-            credentialMapper.insert(credential);
+            return credentialMapper.insert(credential);
         }
 
-        if(credentialForm.getCredentialId() != 0){
+        else{
             credential.setCredentialId(credentialForm.getCredentialId());
-            credentialMapper.update(credential.getUrl(), credential.getUsername(), credential.getKey(), credential.getPassword(), credential.getCredentialId());
+            return credentialMapper.update(credential.getUrl(), credential.getUsername(), credential.getKey(), credential.getPassword(), credential.getCredentialId());
         }
+
     }
 
     public ArrayList<CredentialWithDecryptedPassword> getAllCredential(){

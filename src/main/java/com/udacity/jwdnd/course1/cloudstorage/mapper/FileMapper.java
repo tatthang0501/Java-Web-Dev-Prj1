@@ -21,4 +21,7 @@ public interface FileMapper {
 
     @Select("SELECT * FROM FILES WHERE fileId = #{fileId}")
     File getFileData(int fileId);
+
+    @Select("SELECT COUNT (filename) FROM FILES WHERE filename = #{fileName}")
+    int fileNameCount(String fileName);
 }

@@ -3,6 +3,7 @@ package com.udacity.jwdnd.course1.cloudstorage.controller;
 import com.udacity.jwdnd.course1.cloudstorage.model.NoteForm;
 import com.udacity.jwdnd.course1.cloudstorage.services.NoteService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -15,15 +16,17 @@ public class NoteController {
     }
 
     @PostMapping("/addOrUpdate")
-    public String addNote(NoteForm noteForm){
+    public String addNote(NoteForm noteForm, Model model){
         System.out.println("note info got " + noteForm.getNoteId() + "/" + noteForm.getNoteTitle() + "/" + noteForm.getNoteDescription());
         noteService.addOrUpdate(noteForm);
-        return "redirect:/home";
+        model.addAttribute("result", true);
+        return "result";
     }
 
     @GetMapping("/delete/{noteId}")
-    public String deleteNote(@PathVariable(name = "noteId", required = true) int noteId){
+    public String deleteNote(@PathVariable(name = "noteId", required = true) int noteId, Model model){
         noteService.deleteNote(noteId);
-        return "redirect:/home";
+        model.addAttribute("result", true);
+        return "result";
     }
 }
