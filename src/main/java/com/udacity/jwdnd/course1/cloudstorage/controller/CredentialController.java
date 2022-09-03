@@ -1,25 +1,30 @@
 package com.udacity.jwdnd.course1.cloudstorage.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.udacity.jwdnd.course1.cloudstorage.model.CredentialForm;
+import com.udacity.jwdnd.course1.cloudstorage.services.CredentialService;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/credentials")
 public class CredentialController {
 
-    @PostMapping("/addCredential")
-    public String addCre(CredentialForm credentialForm){
+    private CredentialService credentialService;
 
+    public CredentialController(CredentialService credentialService) {
+        this.credentialService = credentialService;
     }
 
-    @ResponseBody
-    @GetMapping("/getPassword")
-    public ResponseEntity<?> getDecryptedPassword(){
+    @PostMapping("/addOrUpdate")
+    public String addOrUpdateCredential(CredentialForm credentialForm){
+        System.out.println(credentialForm.toString());
+        credentialService.addOrUpdate(credentialForm);
+        return "redirect:/home";
+    }
 
+    @GetMapping("/delete/{credentialId}")
+    public String deleteCredential(@PathVariable(name = "credentialId", required = true) int credentialId){
+        credentialService.deleteCredential(credentialId);
+        return "redirect:/home";
     }
 }
