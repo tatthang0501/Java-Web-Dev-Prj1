@@ -3,7 +3,6 @@ package com.udacity.jwdnd.course1.cloudstorage;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -13,7 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 
 import java.io.File;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CloudStorageApplicationTests {
 
 	@LocalServerPort
@@ -48,7 +49,7 @@ class CloudStorageApplicationTests {
 	 * PLEASE DO NOT DELETE THIS method.
 	 * Helper method for Udacity-supplied sanity checks.
 	 **/
-	private void doMockSignUp(String firstName, String lastName, String userName, String password){
+	private void doMockSignUp(String firstName, String lastName, String userName, String password) throws InterruptedException {
 		// Create a dummy account for logging in later.
 
 		// Visit the sign-up page.
@@ -87,6 +88,8 @@ class CloudStorageApplicationTests {
 		// success message below depening on the rest of your code.
 		*/
 		Assertions.assertTrue(driver.findElement(By.id("success-msg")).getText().contains("You successfully signed up!"));
+		Thread.sleep(3500);
+
 	}
 
 	
@@ -119,6 +122,23 @@ class CloudStorageApplicationTests {
 
 	}
 
+	private void doLogOut(){
+		WebElement logoutButton = driver.findElement(By.id("logout-button"));
+		logoutButton.click();
+	}
+
+	private void stepForTestingNoteFunctionSim(){
+		doLogIn("testAddNote", "123");
+		WebElement noteTabButton = driver.findElement(By.id("nav-notes-tab"));
+		noteTabButton.click();
+	}
+
+	private void stepForTestingCredentialFunctionSim(){
+		doLogIn("testAddCredential", "123");
+		WebElement credentialTabButton = driver.findElement(By.id("nav-credentials-tab"));
+		credentialTabButton.click();
+	}
+
 	/**
 	 * PLEASE DO NOT DELETE THIS TEST. You may modify this test to work with the 
 	 * rest of your code. 
@@ -131,12 +151,38 @@ class CloudStorageApplicationTests {
 	 * https://review.udacity.com/#!/rubrics/2724/view 
 	 */
 	@Test
-	public void testRedirection() {
+	@Order(1)
+	public void testRedirection() throws InterruptedException {
 		// Create a test account
 		doMockSignUp("Redirection","Test","RT","123");
 		
 		// Check if we have been redirected to the log in page.
+
 		Assertions.assertEquals("http://localhost:" + this.port + "/login", driver.getCurrentUrl());
+	}
+
+	/**
+	 * Test access to any url of the system after logging out
+	 */
+	@Test
+	@Order(2)
+	public void testAccessAfterLoggingOut() throws InterruptedException {
+		doMockSignUp("AccessAfterLoggingOut","Test","AccessAfterLoggingOut","123");
+		doLogIn("AccessAfterLoggingOut", "123");
+		doLogOut();
+		driver.get("http://localhost:" + this.port + "/home");
+		Assertions.assertEquals("http://localhost:" + this.port + "/login", driver.getCurrentUrl());
+	}
+
+	/**
+	 * Test access to home page after logging in
+	 */
+	@Test
+	@Order(3)
+	public void testAccessAfterLoggingIn() throws InterruptedException {
+		doMockSignUp("testAccessAfterLoggingIn","Test","testAccessAfterLoggingIn","123");
+		doLogIn("testAccessAfterLoggingIn", "123");
+		Assertions.assertEquals("http://localhost:" + this.port + "/home", driver.getCurrentUrl());
 	}
 
 	/**
@@ -152,10 +198,11 @@ class CloudStorageApplicationTests {
 	 * https://attacomsian.com/blog/spring-boot-custom-error-page#displaying-custom-error-page
 	 */
 	@Test
-	public void testBadUrl() {
+	@Order(4)
+	public void testBadUrl() throws InterruptedException {
 		// Create a test account
-		doMockSignUp("URL","Test","UT","123");
-		doLogIn("UT", "123");
+		doMockSignUp("testBadUrl","Test","testBadUrl","123");
+		doLogIn("testBadUrl", "123");
 		
 		// Try to access a random made-up URL.
 		driver.get("http://localhost:" + this.port + "/some-random-page");
@@ -176,7 +223,8 @@ class CloudStorageApplicationTests {
 	 * https://spring.io/guides/gs/uploading-files/ under the "Tuning File Upload Limits" section.
 	 */
 	@Test
-	public void testLargeUpload() {
+	@Order(5)
+	public void testLargeUpload() throws InterruptedException {
 		// Create a test account
 		doMockSignUp("Large File","Test","LFT","123");
 		doLogIn("LFT", "123");
@@ -200,6 +248,233 @@ class CloudStorageApplicationTests {
 
 	}
 
+	/**
+	 * Test create note and verify that the note details are visible in the note list
+	 */
+	@Test
+	@Order(6)
+	public void testAddNote() throws InterruptedException {
+		doMockSignUp("testAddNote","Test","testAddNote","123");
+		doLogIn("testAddNote", "123");
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
 
+		WebElement noteTabButton = driver.findElement(By.id("nav-notes-tab"));
+		noteTabButton.click();
+		Thread.sleep(500);
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("add-new-note-button")));
+		WebElement addNoteButton = driver.findElement(By.id("add-new-note-button"));
+		addNoteButton.click();
 
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("note-title")));
+		WebElement inputNoteTitle = driver.findElement(By.id("note-title"));
+		inputNoteTitle.click();
+		inputNoteTitle.sendKeys("Note title adding");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("note-description")));
+		WebElement inputNoteDescription = driver.findElement(By.id("note-description"));
+		inputNoteDescription.click();
+		inputNoteDescription.sendKeys("Note description adding");
+
+		WebElement saveNoteButton = driver.findElement(By.id("save-note-button"));
+		saveNoteButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement noteTabButtonAfter = driver.findElement(By.id("nav-notes-tab"));
+		noteTabButtonAfter.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Note title adding"));
+		Assertions.assertTrue(driver.getPageSource().contains("Note description adding"));
+
+	}
+
+	/**
+	 * Test edit note and verify that the note details are visible in the note list
+	 */
+
+	@Test
+	@Order(7)
+	public void testEditNote() throws InterruptedException {
+		// testAddNote(); // If you run all Test simultaneously, comment this line
+		stepForTestingNoteFunctionSim(); // An uncomment this
+
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("edit-note-1")));
+		WebElement editNoteButton = driver.findElement(By.id("edit-note-1"));
+		editNoteButton.click();
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("note-title")));
+		WebElement inputNoteTitle = driver.findElement(By.id("note-title"));
+		inputNoteTitle.click();
+		inputNoteTitle.clear();
+		inputNoteTitle.sendKeys("Note title editing");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("note-description")));
+		WebElement inputNoteDescription = driver.findElement(By.id("note-description"));
+		inputNoteDescription.click();
+		inputNoteDescription.clear();
+		inputNoteDescription.sendKeys("Note description editing");
+
+		WebElement saveNoteButton = driver.findElement(By.id("save-note-button"));
+		saveNoteButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement noteTabButtonAfter = driver.findElement(By.id("nav-notes-tab"));
+		noteTabButtonAfter.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Note title editing"));
+		Assertions.assertTrue(driver.getPageSource().contains("Note description editing"));
+	}
+
+	/**
+	 * Test delete note and verify that the note no longer appears in the note list
+	 */
+	@Test
+	@Order(8)
+	public void testDeleteNote() throws InterruptedException {
+		// testAddNote(); // If you run all Test simultaneously, comment this line
+		stepForTestingNoteFunctionSim(); // An uncomment this
+
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("delete-note-1")));
+		WebElement deleteNoteButton = driver.findElement(By.id("delete-note-1"));
+		deleteNoteButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement noteTabButtonAfter = driver.findElement(By.id("nav-notes-tab"));
+		noteTabButtonAfter.click();
+
+		Assertions.assertFalse(driver.getPageSource().contains("Note title adding"));
+		Assertions.assertFalse(driver.getPageSource().contains("Note description adding"));
+	}
+
+	/**
+	 * Test create credential and verify that the credential details are visible in the credential list
+	 */
+	@Test
+	@Order(9)
+	public void testAddCredential() throws InterruptedException {
+		doMockSignUp("testAddCredential","Test","testAddCredential","123");
+		doLogIn("testAddCredential", "123");
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
+
+		WebElement credentialTabButton = driver.findElement(By.id("nav-credentials-tab"));
+		credentialTabButton.click();
+
+		Thread.sleep(500);
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("add-credential-button")));
+		WebElement addCredentialButton = driver.findElement(By.id("add-credential-button"));
+		addCredentialButton.click();
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-url")));
+		WebElement inputCredentialUrl = driver.findElement(By.id("credential-url"));
+		inputCredentialUrl.click();
+		inputCredentialUrl.sendKeys("Credential url adding");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-username")));
+		WebElement inputCredentialUsername = driver.findElement(By.id("credential-username"));
+		inputCredentialUsername.click();
+		inputCredentialUsername.sendKeys("Credential username adding");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-password")));
+		WebElement inputCredentialPassword = driver.findElement(By.id("credential-password"));
+		inputCredentialPassword.click();
+		inputCredentialPassword.sendKeys("Credential password adding");
+
+		WebElement saveCredentialButton = driver.findElement(By.id("save-credential-button"));
+		saveCredentialButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement credentialTabButtonAfter = driver.findElement(By.id("nav-credentials-tab"));
+		credentialTabButtonAfter.click();
+		Assertions.assertTrue(driver.getPageSource().contains("Credential url adding"));
+		Assertions.assertTrue(driver.getPageSource().contains("Credential username adding"));
+	}
+
+	/**
+	 * Test edit credential and verify that the credential details are visible in the credential list
+	 */
+	@Test
+	@Order(10)
+	public void testEditCredential() throws InterruptedException {
+		// testAddCredential(); // If you run all Test simultaneously, comment this line
+		stepForTestingCredentialFunctionSim(); // And uncomment this
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("edit-credential-1")));
+		WebElement addCredentialButton = driver.findElement(By.id("edit-credential-1"));
+		addCredentialButton.click();
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-url")));
+		WebElement inputCredentialUrl = driver.findElement(By.id("credential-url"));
+		inputCredentialUrl.click();
+		inputCredentialUrl.clear();
+		inputCredentialUrl.sendKeys("Credential url editing");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-username")));
+		WebElement inputCredentialUsername = driver.findElement(By.id("credential-username"));
+		inputCredentialUsername.click();
+		inputCredentialUsername.clear();
+		inputCredentialUsername.sendKeys("Credential username editing");
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credential-password")));
+		WebElement inputCredentialPassword = driver.findElement(By.id("credential-password"));
+		inputCredentialPassword.click();
+		inputCredentialPassword.clear();
+		inputCredentialPassword.sendKeys("Credential password editing");
+
+		WebElement saveCredentialButton = driver.findElement(By.id("save-credential-button"));
+		saveCredentialButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement credentialTabButtonAfter = driver.findElement(By.id("nav-credentials-tab"));
+		credentialTabButtonAfter.click();
+		Assertions.assertTrue(driver.getPageSource().contains("Credential url editing"));
+		Assertions.assertTrue(driver.getPageSource().contains("Credential username editing"));
+	}
+
+	/**
+	 * Test delete credential and verify that the credential no longer appears in the note list
+	 */
+	@Test
+	@Order(11)
+	public void testDeleteCredential() throws InterruptedException {
+		// testAddCredential(); // If you run all Test simultaneously, comment this line
+		stepForTestingCredentialFunctionSim(); // And uncomment this
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 1);
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("delete-credential-1")));
+		WebElement deleteCredentialButton = driver.findElement(By.id("delete-credential-1"));
+		deleteCredentialButton.click();
+
+		Assertions.assertTrue(driver.getPageSource().contains("Success"));
+
+		WebElement continueButton = driver.findElement(By.id("result-continue-link"));
+		continueButton.click();
+
+		WebElement credentialTabButton = driver.findElement(By.id("nav-credentials-tab"));
+		credentialTabButton.click();
+
+		Assertions.assertFalse(driver.getPageSource().contains("Credential url adding"));
+		Assertions.assertFalse(driver.getPageSource().contains("Credential username adding"));
+	}
 }
